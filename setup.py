@@ -10,7 +10,7 @@ def read(name):
 setup(
     name="lighten",
     version="0.0.0",
-    packages=["lighten"],
+    packages=["lighten", "lightend"],
     entry_points={
         "console_scripts": [
             "lighten = lighten.__main__:main",
