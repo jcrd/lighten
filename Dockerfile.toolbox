@@ -1,0 +1,7 @@
+FROM supplantr/python-toolbox
+
+RUN dnf install -y cairo-gobject-devel
+RUN dnf install -y dbus-devel
+RUN dnf install -y glib2-devel
+RUN dnf install -y glib2-devel
+RUN dnf install -y gobject-introspection-devel
