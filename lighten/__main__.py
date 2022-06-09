@@ -9,10 +9,12 @@ def main():
     )
     parser.add_argument(
         "command",
-        choices=["set", "inc", "up", "dec", "down"],
+        choices=["set", "inc", "up", "dec", "down", "restore"],
         help="Brightness control command",
     )
-    parser.add_argument("value", type=int, help="Brightness value")
+    parser.add_argument(
+        "value", nargs="?", type=int, default=0, help="Brightness value"
+    )
 
     args = parser.parse_args()
 
@@ -31,7 +33,10 @@ def main():
         "down": sub_brightness,
     }
 
-    cmds[args.command](args.value)
+    if args.command == "restore":
+        service.restore_brightness()
+    else:
+        cmds[args.command](args.value)
 
 
 if __name__ == "__main__":

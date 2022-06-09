@@ -9,6 +9,7 @@ VCS: {{{ git_cwd_vcs }}}
 Source0: {{{ git_cwd_pack }}}
 
 Requires: ddcutil
+Requires: gdbm
 Requires: python3-dbus
 Requires: python3-gobject
 
