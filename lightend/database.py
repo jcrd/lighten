@@ -12,7 +12,7 @@ def from_bytes(b):
 
 
 class Timestamp:
-    FORMAT = "%HH%MM%SS"
+    FORMAT = "%H%M%S"
 
     @classmethod
     def from_bytes(cls, b):
