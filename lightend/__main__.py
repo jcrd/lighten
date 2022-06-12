@@ -37,7 +37,7 @@ class Service(dbus.service.Object):
     def save(self):
         logging.debug("Saving brightness...")
         value = ddcutil.get()
-        if value:
+        if value is not None:
             logging.debug("Brightness saved: %d", value)
             self.db.save(value)
 
