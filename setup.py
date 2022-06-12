@@ -11,6 +11,7 @@ setup(
     name="lighten",
     version="0.0.0",
     packages=["lighten", "lightend"],
+    install_requires=["dbus-python", "pygobject"],
     test_suite="test",
     entry_points={
         "console_scripts": [
