@@ -20,10 +20,10 @@ def cast_id(i):
     return int(f"0x{i}", 16)
 
 
-def new_db():
+def new_db(save_fidelity):
     p = Path(Path.home(), ".local", "share", "lighten")
     os.makedirs(p, exist_ok=True)
-    return DB(str(Path(p, "lightend.db")))
+    return DB(str(Path(p, "lightend.db")), save_fidelity)
 
 
 class Service(dbus.service.Object):
@@ -37,7 +37,7 @@ class Service(dbus.service.Object):
 
         self.loop = GLib.MainLoop()
         self.debouncer = Debouncer(self.save)
-        self.db = new_db()
+        self.db = new_db(int(config["params"]["save_fidelity"]))
 
         self.hid_source = HIDSource(
             cast_id(config["device"]["vendor_id"]),
@@ -61,10 +61,8 @@ class Service(dbus.service.Object):
         self.loop.run()
 
     def save(self):
-        logging.debug("Saving brightness...")
         v = ddcutil.get()
         if v is not None:
-            logging.debug("Brightness saved: (%d, %d)", self.debounce_data, v)
             self.db.save(self.debounce_data, v)
 
     def debounce_save(self):
@@ -99,6 +97,7 @@ def main():
 
     config = configparser.ConfigParser()
     config["params"] = {
+        "save_fidelity": "5",
         "max_deviation": "10",
         "change_threshold": "20",
         "restore_interval": "1200",
