@@ -23,19 +23,21 @@ class HIDSource(GLib.Source):
             self.device.close()
 
     def prepare(self):
-        r = self.device.read(self.size)
-        if not r:
+        self.data = self.device.read(self.size)
+        if not self.data:
             return False
-        r = int(float(r.decode()))
+        try:
+            self.data = int(float(self.data.decode()))
+        except ValueError:
+            return False
 
-        if r == -1:
+        if self.data == -1:
             logging.critical("HID device: sensor not found")
             sys.exit(1)
-        if r == -2:
+        if self.data == -2:
             logging.warning("HID device: invalid sensor data")
             return False
 
-        self.data = r
         return (True, -1)
 
     def dispatch(self, callback, _):
