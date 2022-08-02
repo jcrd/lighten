@@ -36,7 +36,7 @@ class Service(dbus.service.Object):
         self.change_threshold = int(config["params"]["change_threshold"])
 
         self.loop = GLib.MainLoop()
-        self.debouncer = Debouncer(self.save)
+        self.debouncer = Debouncer()
         self.db = new_db(int(config["params"]["save_fidelity"]))
 
         self.hid_source = HIDSource(
@@ -60,14 +60,16 @@ class Service(dbus.service.Object):
         logging.debug("Running...")
         self.loop.run()
 
-    def save(self):
+    def save(self, data):
         v = ddcutil.get()
-        if v is not None:
-            self.db.save(self.debounce_data, v)
+        if v is None:
+            logging.warning("Failed to get monitor brightness")
+            return
+        self.db.save(data, v)
 
     def debounce_save(self):
-        self.debounce_data = self.data
-        self.debouncer.start()
+        logging.debug("Debouncing brightness save...")
+        self.debouncer.start(lambda d=self.data: self.save(d))
 
     @dbus.service.method(BUS_NAME + ".Backlight", in_signature="u", out_signature="b")
     def set_brightness(self, value):

@@ -3,14 +3,13 @@ from threading import Lock, Thread
 
 
 class Debouncer:
-    def __init__(self, callback, interval=3):
+    def __init__(self, interval=3):
         self.mutex = Lock()
         self.update_time = None
         self.running = False
-        self.callback = callback
         self.interval = interval
 
-    def _target(self):
+    def _target(self, callback):
         while True:
             self.mutex.acquire()
             try:
@@ -20,17 +19,17 @@ class Debouncer:
             finally:
                 self.mutex.release()
             if not self.running:
-                self.callback()
+                callback()
                 return
             time.sleep(self.interval)
 
-    def start(self):
+    def start(self, callback):
         self.mutex.acquire()
         try:
             self.update_time = time.time()
             if self.running:
                 return
-            Thread(target=self._target).start()
+            Thread(target=self._target, args=[callback], daemon=True).start()
             self.running = True
         finally:
             self.mutex.release()
