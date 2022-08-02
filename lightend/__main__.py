@@ -86,7 +86,7 @@ class Service(dbus.service.Object):
         b = self.db.get(self.data, self.max_deviation)
         if not b:
             return False
-        self.set_brightness(b)
+        ddcutil.set(b, absolute=True)
         logging.debug("Brightness restored: (%d, %d)", self.data, b)
         return True
 
