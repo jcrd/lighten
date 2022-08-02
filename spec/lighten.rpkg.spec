@@ -12,6 +12,7 @@ Requires: ddcutil
 Requires: gdbm
 Requires: python3-dbus
 Requires: python3-gobject
+Requires: python3-hid
 
 BuildRequires:  python3-devel
 BuildRequires:  python3dist(setuptools)
