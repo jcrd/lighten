@@ -51,7 +51,7 @@ class Service(dbus.service.Object):
     def hid_callback(self, data):
         last_data = self.data
         self.data = data
-        if last_data and abs(last_data - data) > self.change_threshold:
+        if last_data is not None and abs(last_data - data) > self.change_threshold:
             logging.debug("Sensor change detected...")
             self.restore_brightness()
         return True
