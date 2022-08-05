@@ -76,6 +76,7 @@ class Service:
         self.restore_interval = int(config["params"]["restore_interval"]) * 1000
 
         self.data = None
+        self.brightness = None
 
         self.owner_id = Gio.bus_own_name(
             Gio.BusType.SESSION,
@@ -106,12 +107,12 @@ class Service:
 
     def run(self):
         logging.debug("Running...")
+        self.brightness = ddcutil.get()
         self.loop.run()
 
     def save(self, data):
-        v = ddcutil.get()
-        if v:
-            self.db.save(data, v)
+        if self.brightness is not None:
+            self.db.save(data, self.brightness)
 
     def debounce_save(self):
         logging.debug("Debouncing brightness save...")
@@ -119,7 +120,7 @@ class Service:
 
     def restore_brightness(self):
         b = self.db.get(self.data, self.max_deviation)
-        if b is None:
+        if b is None or b == self.brightness:
             return False
         r = ddcutil.set(b, absolute=True)
         if r:
@@ -156,17 +157,21 @@ class Service:
 
     def on_handle_backlight(self, conn, sender, path, iname, method, args, invo):
         if method == "SetBrightness":
-            r = ddcutil.set(args.unpack()[0], absolute=True)
+            v = args.unpack()[0]
+            r = ddcutil.set(v, absolute=True)
+            self.brightness = v
             self.debounce_save()
             return_bool(invo, r)
         elif method == "AddBrightness":
-            r = ddcutil.set(args.unpack()[0])
+            v = args.unpack()[0]
+            r = ddcutil.set(v)
+            self.brightness += v
             self.debounce_save()
             return_bool(invo, r)
         elif method == "RestoreBrightness":
             return_bool(invo, self.restore_brightness())
         elif method == "GetBrightness":
-            return_int(invo, ddcutil.get())
+            return_int(invo, self.brightness)
 
     def on_handle_sensor(self, conn, sender, path, iname, method, args, invo):
         if method == "GetData":
