@@ -1,6 +1,6 @@
 import argparse
 
-import dbus
+from gi.repository import Gio, GLib
 
 
 def main():
@@ -18,23 +18,42 @@ def main():
 
     args = parser.parse_args()
 
-    service = dbus.SessionBus().get_object(
-        "com.github.jcrd.lighten", "/com/github/jcrd/lighten"
+    proxy = Gio.DBusProxy.new_sync(
+        Gio.bus_get_sync(Gio.BusType.SESSION, None),
+        Gio.DBusProxyFlags.NONE,
+        None,
+        "com.github.jcrd.lighten",
+        "/com/github/jcrd/lighten",
+        "com.github.jcrd.lighten.Backlight",
+        None,
     )
 
-    def sub_brightness(value):
-        service.add_brightness(-value)
+    def set_brightness(v):
+        v = GLib.Variant("(u)", (v,))
+        proxy.call_sync("SetBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+
+    def add_brightness(v):
+        v = GLib.Variant("(i)", (v,))
+        proxy.call_sync("AddBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+
+    def sub_brightness(v):
+        add_brightness(-v)
+
+    def restore_brightness():
+        proxy.call_sync(
+            "RestoreBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
+        )
 
     cmds = {
-        "set": service.set_brightness,
-        "inc": service.add_brightness,
-        "up": service.add_brightness,
+        "set": set_brightness,
+        "inc": add_brightness,
+        "up": add_brightness,
         "dec": sub_brightness,
         "down": sub_brightness,
     }
 
     if args.command == "restore":
-        service.restore_brightness()
+        restore_brightness()
     else:
         cmds[args.command](args.value)
 

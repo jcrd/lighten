@@ -47,8 +47,6 @@ class DB:
     def get(self, key, max_dev):
         with dbm.open(self.path, "c") as db:
             devs = get_deviations(db, key)
-            if not devs:
+            if not devs or devs[0][1] > max_dev:
                 return None
-            if devs[0][1] > max_dev:
-                return False
             return from_bytes(db[to_bytes(devs[0][0])])

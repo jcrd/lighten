@@ -10,7 +10,6 @@ Source0: {{{ git_cwd_pack }}}
 
 Requires: ddcutil
 Requires: gdbm
-Requires: python3-dbus
 Requires: python3-gobject
 Requires: python3-hid
 
