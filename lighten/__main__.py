@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 from gi.repository import Gio, GLib
 
@@ -30,19 +31,26 @@ def main():
 
     def set_brightness(v):
         v = GLib.Variant("(u)", (v,))
-        proxy.call_sync("SetBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+        r = proxy.call_sync(
+            "SetBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
+        )
+        return r.unpack()[0]
 
     def add_brightness(v):
         v = GLib.Variant("(i)", (v,))
-        proxy.call_sync("AddBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+        r = proxy.call_sync(
+            "AddBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
+        )
+        return r.unpack()[0]
 
     def sub_brightness(v):
-        add_brightness(-v)
+        return add_brightness(-v)
 
     def restore_brightness():
-        proxy.call_sync(
+        r = proxy.call_sync(
             "RestoreBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
         )
+        return r.unpack()[0]
 
     cmds = {
         "set": set_brightness,
@@ -53,9 +61,11 @@ def main():
     }
 
     if args.command == "restore":
-        restore_brightness()
+        r = restore_brightness()
     else:
-        cmds[args.command](args.value)
+        r = cmds[args.command](args.value)
+    if not r:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
