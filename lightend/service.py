@@ -97,6 +97,7 @@ class Service:
         self.data = data
         # Schedule restore after receiving first data.
         if last_data is None:
+            self.restore_brightness()
             self.schedule_restore()
         elif self.detect_change(last_data):
             logging.debug("Sensor change detected...")
