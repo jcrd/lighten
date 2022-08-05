@@ -1,3 +1,4 @@
+import logging
 import subprocess
 
 
@@ -14,6 +15,7 @@ def set(value, absolute=False):
         subprocess.run(cmd, check=True)
         return True
     except subprocess.CalledProcessError:
+        logging.warning("Failed to set monitor brightness")
         return False
 
 
@@ -24,4 +26,5 @@ def get():
         )
         return int(r.stdout.split()[3])
     except subprocess.CalledProcessError:
+        logging.warning("Failed to get monitor brightness")
         return None

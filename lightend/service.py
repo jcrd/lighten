@@ -72,6 +72,8 @@ class Service:
 
         self.max_deviation = int(config["params"]["max_deviation"])
         self.change_threshold = int(config["params"]["change_threshold"])
+        # Convert to milliseconds for `timeout_add`.
+        self.restore_interval = int(config["params"]["restore_interval"]) * 1000
 
         self.data = None
 
@@ -87,10 +89,16 @@ class Service:
     def __del__(self):
         Gio.bus_unown_name(self.owner_id)
 
+    def detect_change(self, data):
+        return abs(data - self.data) > self.change_threshold
+
     def hid_callback(self, data):
         last_data = self.data
         self.data = data
-        if last_data is not None and abs(last_data - data) > self.change_threshold:
+        # Schedule restore after receiving first data.
+        if last_data is None:
+            self.schedule_restore()
+        elif self.detect_change(last_data):
             logging.debug("Sensor change detected...")
             self.restore_brightness()
         return True
@@ -99,20 +107,32 @@ class Service:
         logging.debug("Running...")
         self.loop.run()
 
-    def get_brightness(self):
-        v = ddcutil.get()
-        if v is None:
-            logging.warning("Failed to get monitor brightness")
-        return v
-
     def save(self, data):
-        v = self.get_brightness()
+        v = ddcutil.get()
         if v:
             self.db.save(data, v)
 
     def debounce_save(self):
         logging.debug("Debouncing brightness save...")
         self.debouncer.start(lambda d=self.data: self.save(d))
+
+    def restore_brightness(self):
+        b = self.db.get(self.data, self.max_deviation)
+        if b is None:
+            return False
+        r = ddcutil.set(b, absolute=True)
+        if r:
+            logging.debug("Brightness restored: (%d, %d)", self.data, b)
+        return r
+
+    def restore_timeout(self):
+        if self.detect_change(self.restore_data):
+            self.restore_brightness()
+        self.schedule_restore()
+
+    def schedule_restore(self):
+        self.restore_data = self.data
+        GLib.timeout_add(self.restore_interval, self.restore_timeout)
 
     def on_bus_acquired(self, conn, name):
         conn.register_object(
@@ -143,14 +163,9 @@ class Service:
             self.debounce_save()
             return_bool(invo, r)
         elif method == "RestoreBrightness":
-            b = self.db.get(self.data, self.max_deviation)
-            r = b is not None
-            if r:
-                ddcutil.set(b, absolute=True)
-                logging.debug("Brightness restored: (%d, %d)", self.data, b)
-            return_bool(invo, r)
+            return_bool(invo, self.restore_brightness())
         elif method == "GetBrightness":
-            return_int(invo, self.get_brightness())
+            return_int(invo, ddcutil.get())
 
     def on_handle_sensor(self, conn, sender, path, iname, method, args, invo):
         if method == "GetData":
