@@ -68,8 +68,8 @@ class Service:
         self.db = new_db(int(config["params"]["save_fidelity"]))
 
         self.hid_source = HIDSource(
-            cast_id(config["device"]["vendor_id"]),
-            cast_id(config["device"]["product_id"]),
+            cast_id(config["sensor"]["vendor_id"]),
+            cast_id(config["sensor"]["product_id"]),
         )
         self.hid_source.set_callback(self.hid_callback)
         self.hid_source.attach()
