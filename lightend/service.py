@@ -9,6 +9,10 @@ from lightend.database import DB
 from lightend.debouncer import Debouncer
 from lightend.hid_source import HIDSource
 
+LOGIND_NAME = "org.freedesktop.login1"
+LOGIND_IFACE = f"{LOGIND_NAME}.Manager"
+LOGIND_PATH = "/org/freedesktop/login1"
+
 BUS_NAME = "com.github.jcrd.lighten"
 
 xml = f"""
@@ -77,6 +81,18 @@ class Service:
 
         self.data = None
         self.brightness = None
+        self.restore_source = None
+
+        self.logind = Gio.DBusProxy.new_sync(
+            Gio.bus_get_sync(Gio.BusType.SYSTEM, None),
+            Gio.DBusProxyFlags.NONE,
+            None,
+            LOGIND_NAME,
+            LOGIND_PATH,
+            LOGIND_IFACE,
+            None,
+        )
+        self.logind.connect("g-signal", self.on_logind_signal)
 
         self.owner_id = Gio.bus_own_name(
             Gio.BusType.SESSION,
@@ -134,7 +150,21 @@ class Service:
 
     def schedule_restore(self):
         self.restore_data = self.data
-        GLib.timeout_add(self.restore_interval, self.restore_timeout)
+        self.restore_source = GLib.timeout_add(
+            self.restore_interval, self.restore_timeout
+        )
+
+    def on_logind_signal(self, conn, sender, signal, args):
+        if signal != "PrepareForSleep":
+            return
+        if args.unpack()[0]:
+            self.restore_data = self.data
+        else:
+            if self.detect_change(self.restore_data):
+                self.restore_brightness()
+            if self.restore_source:
+                GLib.source_remove(self.restore_source)
+                self.schedule_restore()
 
     def on_bus_acquired(self, conn, name):
         conn.register_object(
