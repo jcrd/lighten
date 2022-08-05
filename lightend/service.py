@@ -25,6 +25,9 @@ xml = f"""
       <method name='RestoreBrightness'>
           <arg name='success' type='b' direction='out'/>
       </method>
+      <method name='GetBrightness'>
+          <arg name='value' type='i' direction='out'/>
+      </method>
   </interface>
 </node>
 """
@@ -42,6 +45,10 @@ def new_db(save_fidelity):
 
 def return_bool(invo, b):
     invo.return_value(GLib.Variant("(b)", (b,)))
+
+
+def return_int(invo, i):
+    invo.return_value(GLib.Variant("(i)", (-1 if i is None else i,)))
 
 
 class Service:
@@ -87,12 +94,16 @@ class Service:
         logging.debug("Running...")
         self.loop.run()
 
-    def save(self, data):
+    def get_brightness(self):
         v = ddcutil.get()
         if v is None:
             logging.warning("Failed to get monitor brightness")
-            return
-        self.db.save(data, v)
+        return v
+
+    def save(self, data):
+        v = self.get_brightness()
+        if v:
+            self.db.save(data, v)
 
     def debounce_save(self):
         logging.debug("Debouncing brightness save...")
@@ -126,3 +137,5 @@ class Service:
                 ddcutil.set(b, absolute=True)
                 logging.debug("Brightness restored: (%d, %d)", self.data, b)
             return_bool(invo, r)
+        elif method == "GetBrightness":
+            return_int(invo, self.get_brightness())

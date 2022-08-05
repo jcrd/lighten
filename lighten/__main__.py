@@ -10,7 +10,7 @@ def main():
     )
     parser.add_argument(
         "command",
-        choices=["set", "inc", "up", "dec", "down", "restore"],
+        choices=["set", "inc", "up", "dec", "down", "restore", "get"],
         help="Brightness control command",
     )
     parser.add_argument(
@@ -52,6 +52,12 @@ def main():
         )
         return r.unpack()[0]
 
+    def get_brightness():
+        r = proxy.call_sync(
+            "GetBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
+        )
+        return r.unpack()[0]
+
     cmds = {
         "set": set_brightness,
         "inc": add_brightness,
@@ -60,7 +66,13 @@ def main():
         "down": sub_brightness,
     }
 
-    if args.command == "restore":
+    if args.command == "get":
+        b = get_brightness()
+        if b != -1:
+            print(b)
+            return
+        r = False
+    elif args.command == "restore":
         r = restore_brightness()
     else:
         r = cmds[args.command](args.value)
