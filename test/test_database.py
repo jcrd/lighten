@@ -27,7 +27,7 @@ class TestDatabase(unittest.TestCase):
             10: 35,
             33: 65,
             45: 75,
-            70: False,
+            70: None,
         }
         max_deviation = 10
 
