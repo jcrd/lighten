@@ -29,7 +29,7 @@ class Debouncer:
             self.update_time = time.time()
             if self.running:
                 return
-            Thread(target=self._target, args=[callback], daemon=True).start()
+            Thread(target=self._target, args=(callback,), daemon=True).start()
             self.running = True
         finally:
             self.mutex.release()
