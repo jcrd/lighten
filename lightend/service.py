@@ -122,7 +122,7 @@ class Service:
         b = self.db.get(self.data, self.max_deviation)
         if b is None or b == self.brightness:
             return False
-        r = ddcutil.set(b, absolute=True)
+        r = ddcutil.set(b)
         if r:
             logging.debug("Brightness restored: (%d, %d)", self.data, b)
         return r
@@ -158,13 +158,13 @@ class Service:
     def on_handle_backlight(self, conn, sender, path, iname, method, args, invo):
         if method == "SetBrightness":
             v = args.unpack()[0]
-            r = ddcutil.set(v, absolute=True)
+            r = ddcutil.set(v)
             self.brightness = v
             self.debounce_save()
             return_bool(invo, r)
         elif method == "AddBrightness":
             v = args.unpack()[0]
-            r = ddcutil.set(v)
+            r = ddcutil.set(v, relative=True)
             self.brightness += v
             self.debounce_save()
             return_bool(invo, r)

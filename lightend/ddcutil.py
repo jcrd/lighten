@@ -2,9 +2,9 @@ import logging
 import subprocess
 
 
-def set(value, absolute=False):
+def set(value, relative=False):
     cmd = ["ddcutil", "setvcp", "10"]
-    if not absolute:
+    if relative:
         sign = "+"
         if value < 0:
             sign = "-"
