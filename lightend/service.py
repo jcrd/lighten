@@ -29,6 +29,11 @@ xml = f"""
           <arg name='value' type='i' direction='out'/>
       </method>
   </interface>
+  <interface name='{BUS_NAME}.Sensor'>
+      <method name='GetData'>
+          <arg name='value' type='i' direction='out'/>
+      </method>
+  </interface>
 </node>
 """
 
@@ -113,7 +118,14 @@ class Service:
         conn.register_object(
             "/com/github/jcrd/lighten",
             self.node.interfaces[0],
-            self.on_handle_method,
+            self.on_handle_backlight,
+            None,
+            None,
+        )
+        conn.register_object(
+            "/com/github/jcrd/lighten",
+            self.node.interfaces[1],
+            self.on_handle_sensor,
             None,
             None,
         )
@@ -121,7 +133,7 @@ class Service:
     def on_name_pass(self, conn, name):
         pass
 
-    def on_handle_method(self, conn, sender, path, iname, method, args, invo):
+    def on_handle_backlight(self, conn, sender, path, iname, method, args, invo):
         if method == "SetBrightness":
             r = ddcutil.set(args.unpack()[0], absolute=True)
             self.debounce_save()
@@ -139,3 +151,7 @@ class Service:
             return_bool(invo, r)
         elif method == "GetBrightness":
             return_int(invo, self.get_brightness())
+
+    def on_handle_sensor(self, conn, sender, path, iname, method, args, invo):
+        if method == "GetData":
+            return_int(invo, self.data)

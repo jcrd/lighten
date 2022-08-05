@@ -9,12 +9,12 @@ Enable the daemon with: `systemctl --user enable --now lightend`
 Then control your monitor's brightness with `lighten`:
 
 ```txt
-usage: lighten [-h] {set,inc,up,dec,down,restore,get} [value]
+usage: lighten [-h] {set,inc,up,dec,down,restore,get,sensor} [value]
 
 Control monitor brightness
 
 positional arguments:
-  {set,inc,up,dec,down,restore,get}
+  {set,inc,up,dec,down,restore,get,sensor}
                         Brightness control command
   value                 Brightness value
 

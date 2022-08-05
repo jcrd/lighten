@@ -4,13 +4,25 @@ import sys
 from gi.repository import Gio, GLib
 
 
+def get_proxy(iface):
+    return Gio.DBusProxy.new_sync(
+        Gio.bus_get_sync(Gio.BusType.SESSION, None),
+        Gio.DBusProxyFlags.NONE,
+        None,
+        "com.github.jcrd.lighten",
+        "/com/github/jcrd/lighten",
+        f"com.github.jcrd.lighten.{iface}",
+        None,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Control monitor brightness", prog="lighten"
     )
     parser.add_argument(
         "command",
-        choices=["set", "inc", "up", "dec", "down", "restore", "get"],
+        choices=["set", "inc", "up", "dec", "down", "restore", "get", "sensor"],
         help="Brightness control command",
     )
     parser.add_argument(
@@ -19,43 +31,38 @@ def main():
 
     args = parser.parse_args()
 
-    proxy = Gio.DBusProxy.new_sync(
-        Gio.bus_get_sync(Gio.BusType.SESSION, None),
-        Gio.DBusProxyFlags.NONE,
-        None,
-        "com.github.jcrd.lighten",
-        "/com/github/jcrd/lighten",
-        "com.github.jcrd.lighten.Backlight",
-        None,
-    )
-
     def set_brightness(v):
+        p = get_proxy("Backlight")
         v = GLib.Variant("(u)", (v,))
-        r = proxy.call_sync(
-            "SetBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
-        )
+        r = p.call_sync("SetBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
         return r.unpack()[0]
 
     def add_brightness(v):
+        p = get_proxy("Backlight")
         v = GLib.Variant("(i)", (v,))
-        r = proxy.call_sync(
-            "AddBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
-        )
+        r = p.call_sync("AddBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
         return r.unpack()[0]
 
     def sub_brightness(v):
         return add_brightness(-v)
 
     def restore_brightness():
-        r = proxy.call_sync(
+        p = get_proxy("Backlight")
+        r = p.call_sync(
             "RestoreBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
         )
         return r.unpack()[0]
 
     def get_brightness():
-        r = proxy.call_sync(
+        p = get_proxy("Backlight")
+        r = p.call_sync(
             "GetBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
         )
+        return r.unpack()[0]
+
+    def get_data():
+        p = get_proxy("Sensor")
+        r = p.call_sync("GetData", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
         return r.unpack()[0]
 
     cmds = {
@@ -66,12 +73,17 @@ def main():
         "down": sub_brightness,
     }
 
-    if args.command == "get":
+    r = False
+    if args.command == "sensor":
+        d = get_data()
+        if d != -1:
+            print(d)
+            return
+    elif args.command == "get":
         b = get_brightness()
         if b != -1:
             print(b)
             return
-        r = False
     elif args.command == "restore":
         r = restore_brightness()
     else:
