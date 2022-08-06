@@ -1,0 +1,13 @@
+name: unittest
+
+on: [push, pull_request]
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    container: supplantr/lighten:latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Test
+        run: python3 -m unittest
