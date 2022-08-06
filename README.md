@@ -1,6 +1,23 @@
 # lighten
 
-Lighten is an intelligent monitor brightness control utility.
+lighten is an intelligent monitor brightness control utility that regulates
+brightness based on ambient light.
+
+It requires a HID-based light sensor that regularly reports ambient light values.
+See [arduino-lighten][arduino-lighten] for an Arduino-based option.
+
+[arduino-lighten]: https://github.com/jcrd/arduino-lighten
+
+## Features
+
+- saves ambient light to monitor brightness correlations
+- restores monitor brightness...
+  - when ambient light changes significantly
+  - on demand
+  - at startup
+  - upon wakeup from sleep
+  - at regular intervals as time passes
+- provides a DBus service and CLI client
 
 ## Usage
 
@@ -21,6 +38,37 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
 ```
+
+## Configuration
+
+lighten looks for a configuration file at
+`$XDG_CONFIG_HOME/lighten/lightend.conf` or falls back to
+`$HOME/.config/lighten/lightend.conf` if `$XDG_CONFIG_HOME` is unset.
+
+See [lightend.conf](lightend.conf) for the format and defaults.
+
+The `[sensor]` section is required and must contain the `vendor_id` and
+`product_id` keys which specify the vendor ID and product ID of the HID device
+to use, respectively.
+
+These can be obtained using `lsusb`:
+
+```
+Bus 005 Device 002: ID 239a:8111 Adafruit QT Py ESP32-S2
+```
+
+The sixth column contains the IDs in the format: `vendor:product`.
+
+The `[params]` section may contain the following keys:
+
+- `save_fidelity`: range of values to be subsumed when saving a new ambient
+light value
+- `max_deviation`: maximum difference between current and saved ambient light
+value for restoration
+- `change_threshold`: difference between ambient light values that warrants
+restoring saved brightness
+- `restore_interval`: seconds after which the ambient light will be checked to
+restore saved brightness
 
 ## License
 
