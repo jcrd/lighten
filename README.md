@@ -1,5 +1,7 @@
 # lighten
 
+[![unittest](https://github.com/jcrd/lighten/actions/workflows/unittest.yml/badge.svg)](https://github.com/jcrd/lighten/actions/workflows/unittest.yml)
+
 lighten is an intelligent monitor brightness control utility that regulates
 brightness based on ambient light.
 
