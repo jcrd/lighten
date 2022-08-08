@@ -7,6 +7,8 @@ class Debouncer:
         self.source = None
 
     def start(self, callback):
-        if self.source:
-            GLib.source_remove(self.source)
-        self.source = GLib.timeout_add(self.interval, callback)
+        def _cb():
+            if self.source:
+                GLib.source_remove(self.source)
+            callback()
+        self.source = GLib.timeout_add(self.interval, _cb)
