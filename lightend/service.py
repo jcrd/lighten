@@ -140,6 +140,7 @@ class Service:
             return False
         r = ddcutil.set(b)
         if r:
+            self.brightness = b
             logging.debug("Brightness restored: (%d, %d)", self.data, b)
         return r
 
