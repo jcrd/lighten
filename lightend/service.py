@@ -158,11 +158,15 @@ class Service:
     def on_logind_signal(self, conn, sender, signal, args):
         if signal != "PrepareForSleep":
             return
-        if args.unpack()[0]:
+        s = args.unpack()[0]
+        logging.debug(f"logind signal received: PrepareForSleep ({s})")
+        if s:
             self.restore_data = self.data
         else:
             if self.detect_change(self.restore_data):
                 self.restore_brightness()
+            else:
+                logging.debug(f"No change detected: {self.restore_data} -> {self.data}")
             if self.restore_source:
                 GLib.source_remove(self.restore_source)
                 self.schedule_restore()
