@@ -22,7 +22,17 @@ def main():
     )
     parser.add_argument(
         "command",
-        choices=["set", "inc", "up", "dec", "down", "restore", "get", "sensor"],
+        choices=[
+            "set",
+            "inc",
+            "up",
+            "dec",
+            "down",
+            "restore",
+            "get",
+            "sensor",
+            "status",
+        ],
         help="Brightness control command",
     )
     parser.add_argument(
@@ -83,6 +93,12 @@ def main():
         b = get_brightness()
         if b != -1:
             print(b)
+            return
+    elif args.command == "status":
+        d = get_data()
+        b = get_brightness()
+        if d != -1 and b != -1:
+            print(d, b)
             return
     elif args.command == "restore":
         r = restore_brightness()
