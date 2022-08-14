@@ -23,7 +23,7 @@ def main():
     config["params"] = {
         "save_fidelity": "5",
         "max_deviation": "10",
-        "change_threshold": "20",
+        "change_threshold": "10",
         "restore_interval": "300",
     }
 
