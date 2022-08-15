@@ -145,8 +145,11 @@ class Service:
         return r
 
     def restore_timeout(self):
+        logging.debug("Restore timeout reached")
         if self.detect_change(self.restore_data):
             self.restore_brightness()
+        else:
+            logging.debug(f"No change detected: {self.restore_data} -> {self.data}")
         self.schedule_restore()
 
     def schedule_restore(self):
