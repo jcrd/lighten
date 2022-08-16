@@ -71,6 +71,8 @@ value for restoration
 restoring saved brightness
 - `restore_interval`: seconds after which the ambient light will be checked to
 restore saved brightness
+- `restore_range`: number of `restore_interval` cycles after which brightness
+will be compared to the value recorded at the start of this range
 
 ## License
 

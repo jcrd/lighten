@@ -25,6 +25,7 @@ def main():
         "max_deviation": "10",
         "change_threshold": "10",
         "restore_interval": "300",
+        "restore_range": "4",
     }
 
     p = Path(GLib.get_user_config_dir(), "lighten", "lightend.conf")

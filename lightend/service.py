@@ -8,10 +8,7 @@ import lightend.ddcutil as ddcutil
 from lightend.database import DB
 from lightend.debouncer import Debouncer
 from lightend.hid_source import HIDSource
-
-LOGIND_NAME = "org.freedesktop.login1"
-LOGIND_IFACE = f"{LOGIND_NAME}.Manager"
-LOGIND_PATH = "/org/freedesktop/login1"
+from lightend.restorer import Restorer
 
 BUS_NAME = "com.github.jcrd.lighten"
 
@@ -76,23 +73,16 @@ class Service:
 
         self.max_deviation = int(config["params"]["max_deviation"])
         self.change_threshold = int(config["params"]["change_threshold"])
-        # Convert to milliseconds for `timeout_add`.
-        self.restore_interval = int(config["params"]["restore_interval"]) * 1000
+
+        self.restorer = Restorer(
+            self,
+            # Convert to milliseconds for `timeout_add`.
+            int(config["params"]["restore_interval"]) * 1000,
+            int(config["params"]["restore_range"]),
+        )
 
         self.data = None
         self.brightness = None
-        self.restore_source = None
-
-        self.logind = Gio.DBusProxy.new_sync(
-            Gio.bus_get_sync(Gio.BusType.SYSTEM, None),
-            Gio.DBusProxyFlags.NONE,
-            None,
-            LOGIND_NAME,
-            LOGIND_PATH,
-            LOGIND_IFACE,
-            None,
-        )
-        self.logind.connect("g-signal", self.on_logind_signal)
 
         self.owner_id = Gio.bus_own_name(
             Gio.BusType.SESSION,
@@ -115,7 +105,7 @@ class Service:
         # Schedule restore after receiving first data.
         if last_data is None:
             self.restore_brightness()
-            self.schedule_restore()
+            self.restorer.schedule()
         elif self.detect_change(last_data):
             logging.debug("Sensor change detected...")
             self.restore_brightness()
@@ -143,36 +133,6 @@ class Service:
             self.brightness = b
             logging.debug("Brightness restored: (%d, %d)", self.data, b)
         return r
-
-    def restore_timeout(self):
-        logging.debug("Restore timeout reached")
-        if self.detect_change(self.restore_data):
-            self.restore_brightness()
-        else:
-            logging.debug(f"No change detected: {self.restore_data} -> {self.data}")
-        self.schedule_restore()
-
-    def schedule_restore(self):
-        self.restore_data = self.data
-        self.restore_source = GLib.timeout_add(
-            self.restore_interval, self.restore_timeout
-        )
-
-    def on_logind_signal(self, conn, sender, signal, args):
-        if signal != "PrepareForSleep":
-            return
-        s = args.unpack()[0]
-        logging.debug(f"logind signal received: PrepareForSleep ({s})")
-        if s:
-            self.restore_data = self.data
-        else:
-            if self.detect_change(self.restore_data):
-                self.restore_brightness()
-            else:
-                logging.debug(f"No change detected: {self.restore_data} -> {self.data}")
-            if self.restore_source:
-                GLib.source_remove(self.restore_source)
-                self.schedule_restore()
 
     def on_bus_acquired(self, conn, name):
         conn.register_object(
