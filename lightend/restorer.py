@@ -59,15 +59,8 @@ class Restorer:
     def on_logind_signal(self, conn, sender, signal, args):
         if signal != "PrepareForSleep":
             return
-        s = args.unpack()[0]
-        logging.debug(f"logind signal received: PrepareForSleep ({s})")
-        if s:
-            self.data = self.service.data
-        else:
-            if self.service.detect_change(self.data):
-                self.service.restore_brightness()
-            else:
-                logging.debug(f"No change detected: {self.data} -> {self.service.data}")
-            if self.source:
-                GLib.source_remove(self.source)
-                self.schedule()
+        logging.debug(f"logind signal received: PrepareForSleep ({args.unpack()[0]})")
+        self.service.restore_brightness()
+        if self.source:
+            GLib.source_remove(self.source)
+            self.schedule()
