@@ -97,7 +97,7 @@ class Service:
         Gio.bus_unown_name(self.owner_id)
 
     def detect_change(self, data):
-        return abs(data - self.data) > self.change_threshold
+        return abs(data - self.data) >= self.change_threshold
 
     def hid_callback(self, data):
         last_data = self.data
