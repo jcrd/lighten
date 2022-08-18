@@ -24,8 +24,8 @@ def main():
         "save_fidelity": "5",
         "max_deviation": "10",
         "change_threshold": "10",
-        "restore_interval": "300",
-        "restore_range": "4",
+        "restore_interval": "900",
+        "restore_range": "2",
     }
 
     p = Path(GLib.get_user_config_dir(), "lighten", "lightend.conf")
