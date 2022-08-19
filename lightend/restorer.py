@@ -60,6 +60,7 @@ class Restorer:
         if signal != "PrepareForSleep":
             return
         logging.debug(f"logind signal received: PrepareForSleep ({args.unpack()[0]})")
+        self.service.hid_source.invalidate()
         self.service.restore_brightness()
         if self.source:
             GLib.source_remove(self.source)

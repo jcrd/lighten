@@ -10,6 +10,7 @@ class HIDSource(GLib.Source):
         super().__init__()
         self.size = size
         self.device = None
+        self.status = False
 
         try:
             self.device = hid.Device(vid, pid)
@@ -22,7 +23,11 @@ class HIDSource(GLib.Source):
         if self.device:
             self.device.close()
 
+    def invalidate(self):
+        self.status = False
+
     def prepare(self):
+        self.invalidate()
         try:
             self.data = self.device.read(self.size)
         except hid.HIDException as e:
@@ -30,11 +35,11 @@ class HIDSource(GLib.Source):
             sys.exit(3)
 
         if not self.data:
-            return False
+            return self.status
         try:
             self.data = int(float(self.data.decode()))
         except ValueError:
-            return False
+            return self.status
 
         if self.data == -1:
             logging.critical("HID device: sensor not found")
@@ -43,7 +48,13 @@ class HIDSource(GLib.Source):
             logging.warning("HID device: invalid sensor data")
             sys.exit(1)
 
-        return (True, -1)
+        self.status = True
+        return (self.status, -1)
+
+    def check(self):
+        if not self.status:
+            self.prepare()
+        return self.status
 
     def dispatch(self, callback, _):
         return callback(self.data)
