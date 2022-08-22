@@ -16,76 +16,78 @@ def get_proxy(iface):
     )
 
 
+def set_brightness(v):
+    p = get_proxy("Backlight")
+    v = GLib.Variant("(u)", (v,))
+    r = p.call_sync("SetBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+    return r.unpack()[0]
+
+
+def add_brightness(v):
+    p = get_proxy("Backlight")
+    v = GLib.Variant("(i)", (v,))
+    r = p.call_sync("AddBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+    return r.unpack()[0]
+
+
+def restore_brightness():
+    p = get_proxy("Backlight")
+    r = p.call_sync(
+        "RestoreBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
+    )
+    return r.unpack()[0]
+
+
+def get_brightness():
+    p = get_proxy("Backlight")
+    r = p.call_sync("GetBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+    return r.unpack()[0]
+
+
+def get_data():
+    p = get_proxy("Sensor")
+    r = p.call_sync("GetData", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+    return r.unpack()[0]
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Control monitor brightness", prog="lighten"
     )
-    parser.add_argument(
-        "command",
-        choices=[
-            "set",
-            "inc",
-            "up",
-            "dec",
-            "down",
-            "restore",
-            "get",
-            "sensor",
-            "status",
-            "normalize",
-        ],
-        help="Brightness control command",
+    sub = parser.add_subparsers(title="commands", dest="command")
+    sub.required = True
+    parsers = {}
+
+    parsers["set"] = sub.add_parser("set", help="Set monitor brightness")
+    parsers["set"].add_argument(
+        "modifier",
+        choices=["+", "-", "="],
+        help="Set brightness relatively or absolutely",
     )
-    parser.add_argument(
-        "value", nargs="?", type=int, default=0, help="Brightness value"
+    parsers["set"].add_argument("value", type=int, help="Brightness value")
+    parsers["get"] = sub.add_parser("get", help="Get monitor brightness")
+    parsers["sensor"] = sub.add_parser("sensor", help="Get sensor data")
+    parsers["status"] = sub.add_parser(
+        "status", help="Get sensor data and monitor brightness"
+    )
+    parsers["restore"] = sub.add_parser(
+        "restore", help="Restore saved monitor brightness"
+    )
+    parsers["normalize"] = sub.add_parser(
+        "normalize", help="Set monitor brightness to sensor data value"
     )
 
     args = parser.parse_args()
 
-    def set_brightness(v):
-        p = get_proxy("Backlight")
-        v = GLib.Variant("(u)", (v,))
-        r = p.call_sync("SetBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
-        return r.unpack()[0]
-
-    def add_brightness(v):
-        p = get_proxy("Backlight")
-        v = GLib.Variant("(i)", (v,))
-        r = p.call_sync("AddBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
-        return r.unpack()[0]
-
-    def sub_brightness(v):
-        return add_brightness(-v)
-
-    def restore_brightness():
-        p = get_proxy("Backlight")
-        r = p.call_sync(
-            "RestoreBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
-        )
-        return r.unpack()[0]
-
-    def get_brightness():
-        p = get_proxy("Backlight")
-        r = p.call_sync(
-            "GetBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
-        )
-        return r.unpack()[0]
-
-    def get_data():
-        p = get_proxy("Sensor")
-        r = p.call_sync("GetData", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
-        return r.unpack()[0]
-
-    cmds = {
-        "set": set_brightness,
-        "inc": add_brightness,
-        "up": add_brightness,
-        "dec": sub_brightness,
-        "down": sub_brightness,
-    }
-
     r = False
-    if args.command == "sensor":
+    if args.command == "set":
+        if args.modifier == "+":
+            r = add_brightness(args.value)
+        elif args.modifier == "-":
+            r = add_brightness(-args.value)
+        elif args.modifier == "=":
+            r = set_brightness(args.value)
+    elif args.command == "sensor":
         d = get_data()
         if d != -1:
             print(d)
@@ -105,8 +107,6 @@ def main():
         r = restore_brightness()
     elif args.command == "normalize":
         r = set_brightness(get_data())
-    else:
-        r = cmds[args.command](args.value)
     if not r:
         sys.exit(1)
 
