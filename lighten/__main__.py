@@ -32,6 +32,7 @@ def main():
             "get",
             "sensor",
             "status",
+            "normalize",
         ],
         help="Brightness control command",
     )
@@ -102,6 +103,8 @@ def main():
             return
     elif args.command == "restore":
         r = restore_brightness()
+    elif args.command == "normalize":
+        r = set_brightness(get_data())
     else:
         r = cmds[args.command](args.value)
     if not r:
