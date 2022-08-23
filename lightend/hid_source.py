@@ -23,7 +23,12 @@ class HIDSource(GLib.Source):
             self.device.close()
 
     def prepare(self):
-        self.data = self.device.read(self.size)
+        try:
+            self.data = self.device.read(self.size)
+        except hid.HIDException as e:
+            logging.critical(f"HID device: {e}")
+            sys.exit(3)
+
         if not self.data:
             return False
         try:
