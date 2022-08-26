@@ -59,6 +59,10 @@ def return_int(invo, i):
 
 class Service:
     def __init__(self, config):
+        self.data = None
+        self.brightness = None
+        self.owner_id = None
+
         self.node = Gio.DBusNodeInfo.new_for_xml(xml)
         self.loop = GLib.MainLoop()
         self.debouncer = Debouncer()
@@ -81,9 +85,6 @@ class Service:
             int(config["params"]["restore_range"]),
         )
 
-        self.data = None
-        self.brightness = None
-
         self.owner_id = Gio.bus_own_name(
             Gio.BusType.SESSION,
             BUS_NAME,
@@ -94,7 +95,8 @@ class Service:
         )
 
     def __del__(self):
-        Gio.bus_unown_name(self.owner_id)
+        if self.owner_id:
+            Gio.bus_unown_name(self.owner_id)
 
     def detect_change(self, data):
         return abs(data - self.data) >= self.change_threshold
