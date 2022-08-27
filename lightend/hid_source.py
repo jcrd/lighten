@@ -41,7 +41,7 @@ class HIDSource(GLib.Source):
             sys.exit(1)
         if self.data == -2:
             logging.warning("HID device: invalid sensor data")
-            return False
+            sys.exit(1)
 
         return (True, -1)
 
