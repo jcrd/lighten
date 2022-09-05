@@ -1,6 +1,7 @@
 # lighten
 
 [![unittest](https://github.com/jcrd/lighten/actions/workflows/unittest.yml/badge.svg)](https://github.com/jcrd/lighten/actions/workflows/unittest.yml)
+[![Copr build status](https://copr.fedorainfracloud.org/coprs/jcrd/lighten/package/lighten/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/jcrd/lighten/package/lighten/)
 
 lighten is an intelligent monitor brightness control utility that regulates
 brightness based on ambient light.
@@ -9,6 +10,17 @@ It requires a HID-based light sensor that regularly reports ambient light values
 See [arduino-lighten][arduino-lighten] for an Arduino-based option.
 
 [arduino-lighten]: https://github.com/jcrd/arduino-lighten
+
+## Packages
+
+- Fedora ([copr][copr])
+
+  ```sh
+  dnf copr enable jcrd/lighten
+  dnf install lighten
+  ```
+
+[copr]: https://copr.fedorainfracloud.org/coprs/jcrd/lighten/
 
 ## Features
 
