@@ -33,29 +33,34 @@ See [arduino-lighten][arduino-lighten] for an Arduino-based option.
   - at regular intervals as time passes
 - provides a DBus service and CLI client
 
-## Usage
+## Initial setup
 
-Enable the daemon with: `systemctl --user enable --now lightend`
+lighten uses [ddcutil][ddcutil] to control monitor brightness.
+This tool requires read/write access to `/dev/i2c` video card devices. In order to use it without root permissions:
 
-Then control your monitor's brightness with `lighten`:
+1. Add user to `i2c` group:
 
-```txt
-usage: lighten [-h] {set,get,sensor,status,restore,normalize} ...
+    ```sh
+    sudo usermod <user-name> -aG i2c
+    ```
 
-Control monitor brightness
+2. Copy ddcutil's udev rule into place:
 
-options:
-  -h, --help            show this help message and exit
+    ```sh
+    sudo cp /usr/share/ddcutil/data/45-ddcutil-i2c.rules /etc/udev/rules.d
+    ```
 
-commands:
-  {set,get,sensor,status,restore,normalize}
-    set                 Set monitor brightness
-    get                 Get monitor brightness
-    sensor              Get sensor data
-    status              Get sensor data and monitor brightness
-    restore             Restore saved monitor brightness
-    normalize           Set monitor brightness to sensor data value
-```
+3. Reload and trigger the new rule:
+
+    ```sh
+    sudo udevadm control --reload
+    sudo udevadm trigger
+    ```
+
+See [this document][i2cperm] for more information.
+
+[ddcutil]: https://www.ddcutil.com/
+[i2cperm]: https://www.ddcutil.com/i2c_permissions/
 
 ## Configuration
 
@@ -89,6 +94,30 @@ restoring saved brightness
 restore saved brightness
 - `restore_range`: number of `restore_interval` cycles after which brightness
 will be compared to the value recorded at the start of this range
+
+## Usage
+
+Enable the daemon with: `systemctl --user enable --now lightend`
+
+Then control your monitor's brightness with `lighten`:
+
+```txt
+usage: lighten [-h] {set,get,sensor,status,restore,normalize} ...
+
+Control monitor brightness
+
+options:
+  -h, --help            show this help message and exit
+
+commands:
+  {set,get,sensor,status,restore,normalize}
+    set                 Set monitor brightness
+    get                 Get monitor brightness
+    sensor              Get sensor data
+    status              Get sensor data and monitor brightness
+    restore             Restore saved monitor brightness
+    normalize           Set monitor brightness to sensor data value
+```
 
 ## License
 
