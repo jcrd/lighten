@@ -38,6 +38,14 @@ def restore_brightness():
     return r.unpack()[0]
 
 
+def normalize_brightness():
+    p = get_proxy("Backlight")
+    r = p.call_sync(
+        "NormalizeBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
+    )
+    return r.unpack()[0]
+
+
 def get_brightness():
     p = get_proxy("Backlight")
     r = p.call_sync("GetBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
@@ -106,7 +114,7 @@ def main():
     elif args.command == "restore":
         r = restore_brightness()
     elif args.command == "normalize":
-        r = set_brightness(get_data())
+        r = normalize_brightness()
     if not r:
         sys.exit(1)
 

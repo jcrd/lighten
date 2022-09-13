@@ -26,6 +26,9 @@ xml = f"""
       <method name='RestoreBrightness'>
           <arg name='success' type='b' direction='out'/>
       </method>
+      <method name='NormalizeBrightness'>
+          <arg name='success' type='b' direction='out'/>
+      </method>
       <method name='GetBrightness'>
           <arg name='value' type='i' direction='out'/>
       </method>
@@ -37,6 +40,21 @@ xml = f"""
   </interface>
 </node>
 """
+
+
+def rounder(n, x=5):
+    if n % 10 >= x:
+        return int((n + 10) / 10) * 10
+    else:
+        return int(n / 10) * 10
+
+
+normalize_methods = {
+    "exact": lambda n: n,
+    "round": rounder,
+    "round-up": lambda n: rounder(n, x=1),
+    "round-down": lambda n: rounder(n, x=9),
+}
 
 
 def cast_id(i):
@@ -63,10 +81,12 @@ class Service:
         self.brightness = None
         self.owner_id = None
 
+        params = config["params"]
+
         self.node = Gio.DBusNodeInfo.new_for_xml(xml)
         self.loop = GLib.MainLoop()
         self.debouncer = Debouncer()
-        self.db = new_db(int(config["params"]["save_fidelity"]))
+        self.db = new_db(int(params["save_fidelity"]))
 
         self.hid_source = HIDSource(
             cast_id(config["sensor"]["vendor_id"]),
@@ -75,14 +95,15 @@ class Service:
         self.hid_source.set_callback(self.hid_callback)
         self.hid_source.attach()
 
-        self.max_deviation = int(config["params"]["max_deviation"])
-        self.change_threshold = int(config["params"]["change_threshold"])
+        self.max_deviation = int(params["max_deviation"])
+        self.change_threshold = int(params["change_threshold"])
+        self.normalize_method = normalize_methods[params["normalize_method"]]
 
         self.restorer = Restorer(
             self,
             # Convert to milliseconds for `timeout_add`.
-            int(config["params"]["restore_interval"]) * 1000,
-            int(config["params"]["restore_range"]),
+            int(params["restore_interval"]) * 1000,
+            int(params["restore_range"]),
         )
 
         self.owner_id = Gio.bus_own_name(
@@ -136,6 +157,14 @@ class Service:
             logging.debug("Brightness restored: (%d, %d)", self.data, b)
         return r
 
+    def normalize_brightness(self):
+        d = self.normalize_method(self.data)
+        r = ddcutil.set(d)
+        if r:
+            self.brightness = d
+            logging.debug("Brightness normalized: (%d, %d)", self.data, d)
+        return r
+
     def on_bus_acquired(self, conn, name):
         conn.register_object(
             "/com/github/jcrd/lighten",
@@ -167,6 +196,8 @@ class Service:
             return_bool(invo, r)
         elif method == "RestoreBrightness":
             return_bool(invo, self.restore_brightness())
+        elif method == "NormalizeBrightness":
+            return_bool(invo, self.normalize_brightness())
         elif method == "GetBrightness":
             return_int(invo, self.brightness)
 

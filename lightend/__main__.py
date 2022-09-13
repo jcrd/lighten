@@ -6,7 +6,7 @@ from pathlib import Path
 
 from gi.repository import GLib
 
-from lightend.service import Service
+from lightend.service import Service, normalize_methods
 
 
 def check_key(section, key):
@@ -26,6 +26,7 @@ def main():
         "change_threshold": "10",
         "restore_interval": "900",
         "restore_range": "2",
+        "normalize_method": "exact",
     }
 
     p = Path(GLib.get_user_config_dir(), "lighten", "lightend.conf")
@@ -41,6 +42,15 @@ def main():
         sys.exit(2)
     check_key(config["sensor"], "vendor_id")
     check_key(config["sensor"], "product_id")
+
+    nm = config["params"]["normalize_method"]
+    if nm not in normalize_methods:
+        logging.critical(
+            "Invalid normalize method {}; must be one of: {}".format(
+                nm, ", ".join(normalize_methods)
+            )
+        )
+        sys.exit(2)
 
     Service(config).run()
 
