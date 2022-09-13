@@ -90,8 +90,8 @@ class Service:
             BUS_NAME,
             Gio.BusNameOwnerFlags.NONE,
             self.on_bus_acquired,
-            self.on_name_pass,
-            self.on_name_pass,
+            None,
+            None,
         )
 
     def __del__(self):
@@ -151,9 +151,6 @@ class Service:
             None,
             None,
         )
-
-    def on_name_pass(self, conn, name):
-        pass
 
     def on_handle_backlight(self, conn, sender, path, iname, method, args, invo):
         if method == "SetBrightness":
