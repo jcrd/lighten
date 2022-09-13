@@ -27,6 +27,7 @@ def main():
         "restore_interval": "900",
         "restore_range": "2",
         "normalize_method": "exact",
+        "auto_normalize": "false",
     }
 
     p = Path(GLib.get_user_config_dir(), "lighten", "lightend.conf")

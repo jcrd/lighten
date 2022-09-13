@@ -104,6 +104,7 @@ class Service:
             # Convert to milliseconds for `timeout_add`.
             int(params["restore_interval"]) * 1000,
             int(params["restore_range"]),
+            True if params["auto_normalize"].lower() == "true" else False,
         )
 
         self.owner_id = Gio.bus_own_name(
@@ -127,7 +128,7 @@ class Service:
         self.data = data
         # Schedule restore after receiving first data.
         if last_data is None:
-            self.restore_brightness()
+            self.restorer.handle_brightness()
             self.restorer.schedule()
         elif self.detect_change(last_data):
             logging.debug("Sensor change detected...")
