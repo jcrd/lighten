@@ -164,6 +164,7 @@ class Service:
         if r:
             self.brightness = d
             logging.debug("Brightness normalized: (%d, %d)", self.data, d)
+            self.debounce_save()
         return r
 
     def on_bus_acquired(self, conn, name):
