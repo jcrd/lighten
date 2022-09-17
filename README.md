@@ -90,6 +90,9 @@ light value
 value for restoration
 - `change_threshold`: difference between ambient light values that warrants
 restoring saved brightness
+- `change_rate`: the rate at which monitor brightness can change in units of
+sensor sample rate, i.e. a value of 3 means only every 4th sampling can trigger
+a restoration
 - `restore_interval`: seconds after which the ambient light will be checked to
 restore saved brightness
 - `restore_range`: number of `restore_interval` cycles after which brightness

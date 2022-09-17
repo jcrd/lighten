@@ -24,6 +24,7 @@ def main():
         "save_fidelity": "5",
         "max_deviation": "10",
         "change_threshold": "10",
+        "change_rate": "3",
         "restore_interval": "900",
         "restore_range": "2",
         "normalize_method": "exact",

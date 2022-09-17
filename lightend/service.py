@@ -81,6 +81,7 @@ class Service:
         self.brightness = None
         self.owner_id = None
         self.hid_source = None
+        self.change_countdown = 0
 
         params = config["params"]
 
@@ -103,6 +104,7 @@ class Service:
 
         self.max_deviation = int(params["max_deviation"])
         self.change_threshold = int(params["change_threshold"])
+        self.change_rate = int(params["change_rate"])
         self.normalize_method = normalize_methods[params["normalize_method"]]
 
         self.restorer = Restorer(
@@ -131,6 +133,9 @@ class Service:
         return abs(data - self.data) >= self.change_threshold
 
     def hid_callback(self, data):
+        if self.change_countdown > 0:
+            self.change_countdown -= 1
+            return True
         last_data = self.data
         self.data = data
         # Schedule restore after receiving first data.
@@ -139,7 +144,8 @@ class Service:
             self.restorer.schedule()
         elif self.detect_change(last_data):
             logging.debug("Sensor change detected...")
-            self.restore_brightness()
+            if self.restore_brightness():
+                self.change_countdown = self.change_rate
         return True
 
     def run(self):
