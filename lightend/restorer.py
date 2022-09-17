@@ -8,12 +8,13 @@ LOGIND_PATH = "/org/freedesktop/login1"
 
 
 class Restorer:
-    def __init__(self, service, i, r, an):
+    def __init__(self, service, i, r, an, cb=None):
         self.service = service
         self.interval = i
         self.range = r
         self.range_count = r
         self.auto_normalize = an
+        self.callback = cb
         self.range_data = None
         self.data = None
 
@@ -67,7 +68,8 @@ class Restorer:
         if signal != "PrepareForSleep":
             return
         logging.debug(f"logind signal received: PrepareForSleep ({args.unpack()[0]})")
-        self.service.hid_source.invalidate()
+        if self.callback:
+            self.callback()
         self.handle_brightness()
         if self.source:
             GLib.source_remove(self.source)
