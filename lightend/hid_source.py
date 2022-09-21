@@ -8,20 +8,27 @@ from gi.repository import GLib
 class HIDSource(GLib.Source):
     def __init__(self, vid, pid, size=64):
         super().__init__()
+        self.vid = vid
+        self.pid = pid
         self.size = size
         self.device = None
         self.status = False
 
-        try:
-            self.device = hid.Device(vid, pid)
-        except hid.HIDException as e:
-            logging.critical(f"HID device (ID {vid:02x}:{pid:02x}): {e}")
-            sys.exit(2)
+        self.connect()
 
     def __del__(self):
         super().__del__()
         if self.device:
             self.device.close()
+
+    def connect(self):
+        if self.device:
+            self.device.close()
+        try:
+            self.device = hid.Device(self.vid, self.pid)
+        except hid.HIDException as e:
+            logging.critical(f"HID device (ID {self.vid:02x}:{self.pid:02x}): {e}")
+            sys.exit(2)
 
     def invalidate(self):
         self.status = False

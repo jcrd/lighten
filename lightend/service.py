@@ -90,17 +90,12 @@ class Service:
         self.debouncer = Debouncer()
         self.db = new_db(int(params["save_fidelity"]))
 
-        def init_hidsource():
-            if self.hid_source:
-                del self.hid_source
-            self.hid_source = HIDSource(
-                cast_id(config["sensor"]["vendor_id"]),
-                cast_id(config["sensor"]["product_id"]),
-            )
-            self.hid_source.set_callback(self.hid_callback)
-            self.hid_source.attach()
-
-        init_hidsource()
+        self.hid_source = HIDSource(
+            cast_id(config["sensor"]["vendor_id"]),
+            cast_id(config["sensor"]["product_id"]),
+        )
+        self.hid_source.set_callback(self.hid_callback)
+        self.hid_source.attach()
 
         self.max_deviation = int(params["max_deviation"])
         self.change_threshold = int(params["change_threshold"])
@@ -113,7 +108,7 @@ class Service:
             int(params["restore_interval"]) * 1000,
             int(params["restore_range"]),
             True if params["auto_normalize"].lower() == "true" else False,
-            lambda: init_hidsource(),
+            self.hid_source.connect,
         )
 
         self.owner_id = Gio.bus_own_name(
