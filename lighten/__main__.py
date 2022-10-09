@@ -46,6 +46,12 @@ def normalize_brightness():
     return r.unpack()[0]
 
 
+def toggle():
+    p = get_proxy("Backlight")
+    r = p.call_sync("ToggleAuto", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+    return r.unpack()[0]
+
+
 def get_brightness():
     p = get_proxy("Backlight")
     r = p.call_sync("GetBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
@@ -84,6 +90,9 @@ def main():
     parsers["normalize"] = sub.add_parser(
         "normalize", help="Set monitor brightness to sensor data value"
     )
+    parsers["toggle"] = sub.add_parser(
+        "toggle", help="Toggle auto adjustment of monitor brightness"
+    )
 
     args = parser.parse_args()
 
@@ -115,6 +124,8 @@ def main():
         r = restore_brightness()
     elif args.command == "normalize":
         r = normalize_brightness()
+    elif args.command == "toggle":
+        r = toggle()
     if not r:
         sys.exit(1)
 

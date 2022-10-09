@@ -29,6 +29,9 @@ xml = f"""
       <method name='NormalizeBrightness'>
           <arg name='success' type='b' direction='out'/>
       </method>
+      <method name='ToggleAuto'>
+          <arg name='on' type='b' direction='out'/>
+      </method>
       <method name='GetBrightness'>
           <arg name='value' type='i' direction='out'/>
       </method>
@@ -82,6 +85,7 @@ class Service:
         self.owner_id = None
         self.hid_source = None
         self.change_countdown = 0
+        self.auto = True
 
         params = config["params"]
 
@@ -156,7 +160,9 @@ class Service:
         logging.debug("Debouncing brightness save...")
         self.debouncer.start(lambda d=self.data: self.save(d))
 
-    def restore_brightness(self):
+    def restore_brightness(self, method=False):
+        if not method and not self.auto:
+            return False
         b = self.db.get(self.data, self.max_deviation)
         if b is None or b == self.brightness:
             return False
@@ -166,7 +172,9 @@ class Service:
             logging.debug("Brightness restored: (%d, %d)", self.data, b)
         return r
 
-    def normalize_brightness(self):
+    def normalize_brightness(self, method=False):
+        if not method and not self.auto:
+            return False
         d = self.normalize_method(self.data)
         r = ddcutil.set(d)
         if r:
@@ -174,6 +182,11 @@ class Service:
             logging.debug("Brightness normalized: (%d, %d)", self.data, d)
             self.debounce_save()
         return r
+
+    def toggle_auto(self):
+        self.auto = not self.auto
+        logging.debug("Toggled auto adjustment: %s", "on" if self.auto else "off")
+        return self.auto
 
     def on_bus_acquired(self, conn, name):
         conn.register_object(
@@ -205,9 +218,11 @@ class Service:
             self.debounce_save()
             return_bool(invo, r)
         elif method == "RestoreBrightness":
-            return_bool(invo, self.restore_brightness())
+            return_bool(invo, self.restore_brightness(method=True))
         elif method == "NormalizeBrightness":
-            return_bool(invo, self.normalize_brightness())
+            return_bool(invo, self.normalize_brightness(method=True))
+        elif method == "ToggleAuto":
+            return_bool(invo, self.toggle_auto())
         elif method == "GetBrightness":
             return_int(invo, self.brightness)
 
