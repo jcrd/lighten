@@ -2,17 +2,15 @@ import logging
 import sys
 
 import hid
-from gi.repository import GLib
 
 
-class HIDSource(GLib.Source):
-    def __init__(self, vid, pid, size=64):
+class Sensor:
+    def __init__(self, vid, pid, size=16):
         super().__init__()
         self.vid = vid
         self.pid = pid
         self.size = size
         self.device = None
-        self.status = False
 
         self.connect()
 
@@ -30,38 +28,28 @@ class HIDSource(GLib.Source):
             logging.critical(f"HID device (ID {self.vid:02x}:{self.pid:02x}): {e}")
             sys.exit(2)
 
-    def invalidate(self):
-        self.status = False
-
-    def prepare(self):
-        self.invalidate()
+    def get_data(self):
         try:
-            self.data = self.device.read(self.size)
+            data = self.device.get_input_report(0, self.size)
         except hid.HIDException as e:
             logging.critical(f"HID device: {e}")
             sys.exit(3)
 
-        if not self.data:
-            return self.status
+        if not data:
+            return (0, False)
         try:
-            self.data = int(float(self.data.decode()))
+            # Exclude report ID in first byte.
+            data = int(data[1:].decode())
         except ValueError:
-            return self.status
+            return (0, False)
 
-        if self.data == -1:
+        if data == -1:
             logging.critical("HID device: sensor not found")
             sys.exit(1)
-        if self.data == -2:
+        if data == -2:
             logging.warning("HID device: invalid sensor data")
-            sys.exit(1)
+            # Try reconnecting if invalid data is received.
+            self.connect()
+            return (0, False)
 
-        self.status = True
-        return (self.status, -1)
-
-    def check(self):
-        if not self.status:
-            self.prepare()
-        return self.status
-
-    def dispatch(self, callback, _):
-        return callback(self.data)
+        return (data, True)

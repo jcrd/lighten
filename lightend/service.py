@@ -1,14 +1,17 @@
 import logging
 import os
+import signal
+import time
 from pathlib import Path
+from threading import Thread
 
 from gi.repository import Gio, GLib
 
 import lightend.ddcutil as ddcutil
 from lightend.database import DB
 from lightend.debouncer import Debouncer
-from lightend.hid_source import HIDSource
 from lightend.restorer import Restorer
+from lightend.sensor import Sensor
 
 BUS_NAME = "com.github.jcrd.lighten"
 
@@ -83,24 +86,22 @@ class Service:
         self.data = None
         self.brightness = None
         self.owner_id = None
-        self.hid_source = None
+        self.sensor = None
         self.change_countdown = 0
         self.auto = True
 
         params = config["params"]
 
         self.node = Gio.DBusNodeInfo.new_for_xml(xml)
-        self.loop = GLib.MainLoop()
         self.debouncer = Debouncer()
         self.db = new_db(int(params["save_fidelity"]))
 
-        self.hid_source = HIDSource(
+        self.sensor = Sensor(
             cast_id(config["sensor"]["vendor_id"]),
             cast_id(config["sensor"]["product_id"]),
         )
-        self.hid_source.set_callback(self.hid_callback)
-        self.hid_source.attach()
 
+        self.sensor_interval = int(params["sensor_interval"])
         self.max_deviation = int(params["max_deviation"])
         self.change_threshold = int(params["change_threshold"])
         self.change_rate = int(params["change_rate"])
@@ -112,7 +113,7 @@ class Service:
             int(params["restore_interval"]) * 1000,
             int(params["restore_range"]),
             True if params["auto_normalize"].lower() == "true" else False,
-            self.hid_source.connect,
+            self.sensor.connect,
         )
 
         self.owner_id = Gio.bus_own_name(
@@ -131,10 +132,7 @@ class Service:
     def detect_change(self, data):
         return abs(data - self.data) >= self.change_threshold
 
-    def hid_callback(self, data):
-        if self.change_countdown > 0:
-            self.change_countdown -= 1
-            return True
+    def handle_sensor_data(self, data):
         last_data = self.data
         self.data = data
         # Schedule restore after receiving first data.
@@ -143,14 +141,37 @@ class Service:
             self.restorer.schedule()
         elif self.detect_change(last_data):
             logging.debug("Sensor change detected...")
-            if self.restore_brightness():
-                self.change_countdown = self.change_rate
-        return True
+            return self.restore_brightness()
 
     def run(self):
         logging.debug("Running...")
+
         self.brightness = ddcutil.get()
-        self.loop.run()
+        loop = GLib.MainLoop()
+        running = True
+
+        signal.signal(signal.SIGINT, lambda _, __: loop.quit())
+
+        def sensor_run():
+            change_countdown = 0
+            while running:
+                if change_countdown > 0:
+                    change_countdown -= 1
+                    continue
+                data, ok = self.sensor.get_data()
+                if not ok:
+                    continue
+                if self.handle_sensor_data(data):
+                    change_countdown = self.change_rate
+                time.sleep(self.sensor_interval)
+
+        threads = (Thread(target=loop.run), Thread(target=sensor_run))
+
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+            running = False
 
     def save(self, data):
         if self.brightness is not None:

@@ -87,6 +87,7 @@ The sixth column contains the IDs in the format: `vendor:product`.
 
 The `[params]` section may contain the following keys:
 
+- `sensor_interval`: rate of sampling sensor data in seconds
 - `save_fidelity`: range of values to be subsumed when saving a new ambient
 light value
 - `max_deviation`: maximum difference between current and saved ambient light

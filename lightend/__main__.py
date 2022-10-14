@@ -21,6 +21,7 @@ def main():
 
     config = configparser.ConfigParser()
     config["params"] = {
+        "sensor_interval": "1",
         "save_fidelity": "5",
         "max_deviation": "10",
         "change_threshold": "10",
