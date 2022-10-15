@@ -47,7 +47,6 @@ class Sensor:
             logging.critical("HID device: sensor not found")
             sys.exit(1)
         if data == -2:
-            logging.warning("HID device: invalid sensor data")
             # Try reconnecting if invalid data is received.
             self.connect()
             return (0, False)

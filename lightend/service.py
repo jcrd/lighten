@@ -160,6 +160,7 @@ class Service:
                     continue
                 data, ok = self.sensor.get_data()
                 if not ok:
+                    logging.warning("HID device: invalid sensor data")
                     continue
                 if self.handle_sensor_data(data):
                     change_countdown = self.change_rate
