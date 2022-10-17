@@ -7,11 +7,12 @@ lighten is an intelligent monitor brightness control utility that regulates
 brightness based on ambient light.
 
 It requires a HID-based light sensor that reports ambient light values.
-It's designed to work with this Arduino software: [arduino-lighten][arduino-lighten].
+It's designed to work with [arduino-lighten][arduino-lighten] [v0.1.0][arduino-version].
 
 See [this blog post][blog-post] for the complete setup!
 
 [arduino-lighten]: https://github.com/jcrd/arduino-lighten
+[arduino-version]: https://github.com/jcrd/arduino-lighten/releases/tag/v0.1.0
 [blog-post]: https://twiddlingbits.net/arduino-monitor-controller
 
 ## Packages
