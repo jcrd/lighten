@@ -1,11 +1,11 @@
 Name: lighten
-Version: 0.1.0
+Version: 0.2.0
 Release: 1%{?dist}
 Summary: Intelligent monitor brightness control utility
 
 License: MIT
 URL: https://github.com/jcrd/lighten
-Source0: https://github.com/jcrd/lighten/archive/v0.1.0.tar.gz
+Source0: https://github.com/jcrd/lighten/archive/v0.2.0.tar.gz
 
 Requires: ddcutil
 Requires: gdbm
@@ -42,5 +42,8 @@ cp -a systemd/lightend.service %{buildroot}/usr/lib/systemd/user
 /usr/lib/systemd/user/lightend.service
 
 %changelog
+* Mon Oct 17 2022 James Reed <james@twiddlingbits.net> - 0.2.0-1
+- Release v0.2.0
+
 * Sun Sep  4 2022 James Reed <james@twiddlingbits.net> - 0.1.0-1
 - Initial release
