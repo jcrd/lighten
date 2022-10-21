@@ -208,6 +208,7 @@ class Service:
     def toggle_auto(self):
         self.auto = not self.auto
         logging.debug("Toggled auto adjustment: %s", "on" if self.auto else "off")
+        self.restorer.handle_brightness()
         return self.auto
 
     def on_bus_acquired(self, conn, name):
