@@ -32,8 +32,9 @@ xml = f"""
       <method name='NormalizeBrightness'>
           <arg name='success' type='b' direction='out'/>
       </method>
-      <method name='ToggleAuto'>
-          <arg name='on' type='b' direction='out'/>
+      <method name='SetAuto'>
+          <arg name='set' type='s' direction='in'/>
+          <arg name='state' type='b' direction='out'/>
       </method>
       <method name='GetBrightness'>
           <arg name='value' type='i' direction='out'/>
@@ -205,10 +206,16 @@ class Service:
             self.debounce_save()
         return r
 
-    def toggle_auto(self):
-        self.auto = not self.auto
-        logging.debug("Toggled auto adjustment: %s", "on" if self.auto else "off")
-        self.restorer.handle_brightness()
+    def set_auto(self, state):
+        states = {
+            "toggle": not self.auto,
+            "on": True,
+            "off": False,
+        }
+        if state in states:
+            self.auto = states[state]
+            logging.debug("Set auto adjustment state: %s", "on" if self.auto else "off")
+            self.restorer.handle_brightness()
         return self.auto
 
     def on_bus_acquired(self, conn, name):
@@ -244,8 +251,9 @@ class Service:
             return_bool(invo, self.restore_brightness(method=True))
         elif method == "NormalizeBrightness":
             return_bool(invo, self.normalize_brightness(method=True))
-        elif method == "ToggleAuto":
-            return_bool(invo, self.toggle_auto())
+        elif method == "SetAuto":
+            v = args.unpack()[0]
+            return_bool(invo, self.set_auto(v))
         elif method == "GetBrightness":
             return_int(invo, self.brightness)
 

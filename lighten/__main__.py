@@ -46,9 +46,10 @@ def normalize_brightness():
     return r.unpack()[0]
 
 
-def toggle():
+def set_auto(v):
     p = get_proxy("Backlight")
-    r = p.call_sync("ToggleAuto", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+    v = GLib.Variant("(s)", (v,))
+    r = p.call_sync("SetAuto", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
     return r.unpack()[0]
 
 
@@ -90,8 +91,13 @@ def main():
     parsers["normalize"] = sub.add_parser(
         "normalize", help="Set monitor brightness to sensor data value"
     )
-    parsers["toggle"] = sub.add_parser(
-        "toggle", help="Toggle auto adjustment of monitor brightness"
+    parsers["auto"] = sub.add_parser(
+        "auto", help="Set auto adjustment of monitor brightness"
+    )
+    parsers["auto"].add_argument(
+        "state",
+        choices=["toggle", "on", "off"],
+        help="Turn auto adjustment on, off, or toggle",
     )
 
     args = parser.parse_args()
@@ -124,8 +130,8 @@ def main():
         r = restore_brightness()
     elif args.command == "normalize":
         r = normalize_brightness()
-    elif args.command == "toggle":
-        r = toggle()
+    elif args.command == "auto":
+        r = set_auto(args.state)
     if not r:
         sys.exit(1)
 
