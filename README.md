@@ -102,6 +102,15 @@ a restoration
 restore saved brightness
 - `restore_range`: number of `restore_interval` cycles after which brightness
 will be compared to the value recorded at the start of this range
+- `normalize_method`: how to normalize monitor brightness based on sensor data; one of:
+  - `exact`: set brightness to exact sensor value
+  - `round`: round brightness to nearest multiple of 10
+  - `round-up`: round brightness up to multiple of 10
+  - `round-down`: round brightness down to multiple of 10
+- `auto_normalize`: if true, automatically normalize monitor brightness when:
+  - lightend is launched
+  - system wakes up from sleep
+  - auto adjustment is toggled
 
 ## Usage
 
