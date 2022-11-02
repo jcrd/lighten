@@ -124,7 +124,8 @@ def main():
         d = get_data()
         b = get_brightness()
         if d != -1 and b != -1:
-            print(d, b)
+            print("sensor:", d)
+            print("monitor:", b)
             return
     elif args.command == "restore":
         r = restore_brightness()
