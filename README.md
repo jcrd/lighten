@@ -111,6 +111,8 @@ will be compared to the value recorded at the start of this range
   - lightend is launched
   - system wakes up from sleep
   - auto adjustment is toggled
+- `always_normalize`: always set monitor brightness based on sensor data,
+ignoring saved values; implies `auto_normalize`
 
 ## Usage
 

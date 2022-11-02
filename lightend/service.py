@@ -82,6 +82,10 @@ def return_int(invo, i):
     invo.return_value(GLib.Variant("(i)", (-1 if i is None else i,)))
 
 
+def str2bool(s):
+    return True if s.lower() == "true" else False
+
+
 class Service:
     def __init__(self, config):
         self.data = None
@@ -107,13 +111,14 @@ class Service:
         self.change_threshold = int(params["change_threshold"])
         self.change_rate = int(params["change_rate"])
         self.normalize_method = normalize_methods[params["normalize_method"]]
+        self.always_normalize = str2bool(params["always_normalize"])
 
         self.restorer = Restorer(
             self,
             # Convert to milliseconds for `timeout_add`.
             int(params["restore_interval"]) * 1000,
             int(params["restore_range"]),
-            True if params["auto_normalize"].lower() == "true" else False,
+            self.always_normalize or str2bool(params["auto_normalize"]),
             self.sensor.connect,
         )
 
@@ -186,6 +191,8 @@ class Service:
     def restore_brightness(self, method=False):
         if not method and not self.auto:
             return False
+        if self.always_normalize:
+            return self.normalize_brightness()
         b = self.db.get(self.data, self.max_deviation)
         if b is None or b == self.brightness:
             return False
