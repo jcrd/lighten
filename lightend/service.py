@@ -192,6 +192,8 @@ class Service:
             self.db.save(data, self.brightness)
 
     def debounce_save(self):
+        if self.always_normalize:
+            return
         logging.debug("Debouncing brightness save...")
         self.debouncer.start(lambda d=self.data: self.save(d))
 
