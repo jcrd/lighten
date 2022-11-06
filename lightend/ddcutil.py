@@ -2,29 +2,26 @@ import logging
 import subprocess
 
 
-def set(value, relative=False):
-    cmd = ["ddcutil", "setvcp", "10"]
-    if relative:
-        sign = "+"
-        if value < 0:
-            sign = "-"
-        cmd.append(sign)
-    cmd.append(str(abs(value)))
+class GetException(Exception):
+    pass
 
+
+def set(value):
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(["ddcutil", "setvcp", "10", str(value)], check=True)
         return True
     except subprocess.CalledProcessError:
-        logging.warning("Failed to set monitor brightness")
+        logging.warning("ddcutil: Failed to set monitor brightness")
         return False
 
 
 def get():
+    """Return the current and max monitor brightness."""
     try:
         r = subprocess.run(
-            ["ddcutil", "getvcp", "-t", "10"], stdout=subprocess.PIPE, check=True
+            ["ddcutil", "getvcp", "10"], stdout=subprocess.PIPE, check=True
         )
-        return int(r.stdout.split()[3])
+        s = r.stdout.split()
+        return (int(s[-5].decode().strip(",")), int(s[-1]))
     except subprocess.CalledProcessError:
-        logging.warning("Failed to get monitor brightness")
-        return None
+        raise GetException

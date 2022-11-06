@@ -1,6 +1,7 @@
 import logging
 import os
 import signal
+import sys
 import time
 from pathlib import Path
 from threading import Thread
@@ -90,6 +91,7 @@ class Service:
     def __init__(self, config):
         self.data = None
         self.brightness = None
+        self.max_brightness = None
         self.owner_id = None
         self.sensor = None
         self.change_countdown = 0
@@ -152,7 +154,12 @@ class Service:
     def run(self):
         logging.debug("Running...")
 
-        self.brightness = ddcutil.get()
+        try:
+            self.brightness, self.max_brightness = ddcutil.get()
+        except ddcutil.GetException:
+            logging.critical("ddcutil: Failed to get monitor brightness info")
+            sys.exit(4)
+
         loop = GLib.MainLoop()
         running = True
 
@@ -225,6 +232,17 @@ class Service:
             self.restorer.handle_brightness()
         return self.auto
 
+    def clamp_brightness(self, v):
+        return max(0, min(v, self.max_brightness or 100))
+
+    def set_brightness(self, v):
+        v = self.clamp_brightness(v)
+        r = ddcutil.set(v)
+        if r:
+            self.brightness = v
+            self.debounce_save()
+        return r
+
     def on_bus_acquired(self, conn, name):
         conn.register_object(
             "/com/github/jcrd/lighten",
@@ -243,17 +261,9 @@ class Service:
 
     def on_handle_backlight(self, conn, sender, path, iname, method, args, invo):
         if method == "SetBrightness":
-            v = args.unpack()[0]
-            r = ddcutil.set(v)
-            self.brightness = v
-            self.debounce_save()
-            return_bool(invo, r)
+            return_bool(invo, self.set_brightness(args.unpack()[0]))
         elif method == "AddBrightness":
-            v = args.unpack()[0]
-            r = ddcutil.set(v, relative=True)
-            self.brightness += v
-            self.debounce_save()
-            return_bool(invo, r)
+            return_bool(invo, self.set_brightness(self.brightness + args.unpack()[0]))
         elif method == "RestoreBrightness":
             return_bool(invo, self.restore_brightness(method=True))
         elif method == "NormalizeBrightness":
