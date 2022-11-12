@@ -8,8 +8,8 @@ from threading import Thread
 
 from gi.repository import Gio, GLib
 
-import lightend.ddcutil as ddcutil
 from lightend.database import DB
+from lightend.ddcutil import ddcutil
 from lightend.debouncer import Debouncer
 from lightend.restorer import Restorer
 from lightend.sensor import Sensor
@@ -148,17 +148,14 @@ class Service:
             self.restorer.handle_brightness()
             self.restorer.schedule()
         elif self.detect_change(last_data):
-            logging.debug("Sensor change detected...")
+            logging.debug("sensor: change detected...")
             return self.restore_brightness()
 
     def run(self):
         logging.debug("Running...")
 
-        try:
-            self.brightness, self.max_brightness = ddcutil.get()
-        except ddcutil.GetException:
-            logging.critical("ddcutil: Failed to get monitor brightness info")
-            sys.exit(4)
+        self.ddcutil = ddcutil()
+        self.brightness = self.ddcutil.initial_brightness
 
         loop = GLib.MainLoop()
         running = True
@@ -202,23 +199,23 @@ class Service:
             return False
         if self.always_normalize:
             return self.normalize_brightness()
-        b = self.db.get(self.data, self.max_deviation)
-        if b is None or b == self.brightness:
+        v = self.db.get(self.data, self.max_deviation)
+        if v is None or v == self.brightness:
             return False
-        r = ddcutil.set(b)
+        r, v = self.ddcutil.set(v)
         if r:
-            self.brightness = b
-            logging.debug("Brightness restored: (%d, %d)", self.data, b)
+            self.brightness = v
+            logging.debug("Brightness restored: (%d, %d)", self.data, v)
         return r
 
     def normalize_brightness(self, method=False):
         if not method and not self.auto:
             return False
-        d = self.normalize_method(self.data)
-        r = ddcutil.set(d)
+        v = self.normalize_method(self.data)
+        r, v = self.ddcutil.set(v)
         if r:
-            self.brightness = d
-            logging.debug("Brightness normalized: (%d, %d)", self.data, d)
+            self.brightness = v
+            logging.debug("Brightness normalized: (%d, %d)", self.data, v)
             self.debounce_save()
         return r
 
@@ -234,12 +231,8 @@ class Service:
             self.restorer.handle_brightness()
         return self.auto
 
-    def clamp_brightness(self, v):
-        return max(0, min(v, self.max_brightness or 100))
-
     def set_brightness(self, v):
-        v = self.clamp_brightness(v)
-        r = ddcutil.set(v)
+        r, v = self.ddcutil.set(v)
         if r:
             self.brightness = v
             self.debounce_save()
