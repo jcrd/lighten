@@ -165,6 +165,7 @@ class Service:
         def sensor_run():
             change_countdown = 0
             while running:
+                time.sleep(self.sensor_interval)
                 if change_countdown > 0:
                     change_countdown -= 1
                     continue
@@ -174,7 +175,6 @@ class Service:
                     continue
                 if self.handle_sensor_data(data):
                     change_countdown = self.change_rate
-                time.sleep(self.sensor_interval)
 
         threads = (Thread(target=loop.run), Thread(target=sensor_run))
 
