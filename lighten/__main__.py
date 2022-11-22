@@ -56,7 +56,8 @@ def set_auto(v):
 def get_brightness():
     p = get_proxy("Backlight")
     r = p.call_sync("GetBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
-    return r.unpack()[0]
+    vs = r.unpack()
+    return vs[0], vs[1]
 
 
 def get_data():
@@ -116,16 +117,17 @@ def main():
             print(d)
             return
     elif args.command == "get":
-        b = get_brightness()
+        b, _ = get_brightness()
         if b != -1:
             print(b)
             return
     elif args.command == "status":
         d = get_data()
-        b = get_brightness()
+        b, base = get_brightness()
         if d != -1 and b != -1:
             print("sensor:", d)
             print("monitor:", b)
+            print("baseline:", base)
             return
     elif args.command == "restore":
         r = restore_brightness()

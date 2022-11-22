@@ -39,6 +39,7 @@ xml = f"""
       </method>
       <method name='GetBrightness'>
           <arg name='value' type='i' direction='out'/>
+          <arg name='baseline' type='i' direction='out'/>
       </method>
   </interface>
   <interface name='{BUS_NAME}.Sensor'>
@@ -83,6 +84,10 @@ def return_int(invo, i):
     invo.return_value(GLib.Variant("(i)", (-1 if i is None else i,)))
 
 
+def return_ints(invo, i, i2):
+    invo.return_value(GLib.Variant("(ii)", (-1 if i is None else i, i2)))
+
+
 def str2bool(s):
     return True if s.lower() == "true" else False
 
@@ -92,6 +97,7 @@ class Service:
         self.data = None
         self.brightness = None
         self.max_brightness = None
+        self.baseline = 0
         self.owner_id = None
         self.sensor = None
         self.change_countdown = 0
@@ -113,14 +119,14 @@ class Service:
         self.change_threshold = int(params["change_threshold"])
         self.change_rate = int(params["change_rate"])
         self.normalize_method = normalize_methods[params["normalize_method"]]
-        self.always_normalize = str2bool(params["always_normalize"])
+        self.normalize_mode = str2bool(params["normalize_mode"])
 
         self.restorer = Restorer(
             self,
             # Convert to milliseconds for `timeout_add`.
             int(params["restore_interval"]) * 1000,
             int(params["restore_range"]),
-            self.always_normalize or str2bool(params["auto_normalize"]),
+            self.normalize_mode or str2bool(params["auto_normalize"]),
             self.sensor.connect,
         )
 
@@ -189,7 +195,7 @@ class Service:
             self.db.save(data, self.brightness)
 
     def debounce_save(self):
-        if self.always_normalize:
+        if self.normalize_mode:
             return
         logging.debug("Debouncing brightness save...")
         self.debouncer.start(lambda d=self.data: self.save(d))
@@ -197,7 +203,7 @@ class Service:
     def restore_brightness(self, method=False):
         if not method and not self.auto:
             return False
-        if self.always_normalize:
+        if self.normalize_mode:
             return self.normalize_brightness()
         v = self.db.get(self.data, self.max_deviation)
         if v is None or v == self.brightness:
@@ -211,7 +217,7 @@ class Service:
     def normalize_brightness(self, method=False):
         if not method and not self.auto:
             return False
-        v = self.normalize_method(self.data)
+        v = self.baseline + self.normalize_method(self.data)
         r, v = self.ddcutil.set(v)
         if r:
             self.brightness = v
@@ -232,6 +238,8 @@ class Service:
         return self.auto
 
     def set_brightness(self, v):
+        if self.normalize_mode:
+            self.baseline += v - self.brightness
         r, v = self.ddcutil.set(v)
         if r:
             self.brightness = v
@@ -267,7 +275,7 @@ class Service:
             v = args.unpack()[0]
             return_bool(invo, self.set_auto(v))
         elif method == "GetBrightness":
-            return_int(invo, self.brightness)
+            return_ints(invo, self.brightness, self.baseline)
 
     def on_handle_sensor(self, conn, sender, path, iname, method, args, invo):
         if method == "GetData":

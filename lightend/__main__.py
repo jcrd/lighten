@@ -30,7 +30,7 @@ def main():
         "restore_range": "2",
         "normalize_method": "exact",
         "auto_normalize": "false",
-        "always_normalize": "false",
+        "normalize_mode": "false",
     }
 
     p = Path(GLib.get_user_config_dir(), "lighten", "lightend.conf")
