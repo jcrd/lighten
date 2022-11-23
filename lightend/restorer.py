@@ -6,6 +6,8 @@ LOGIND_NAME = "org.freedesktop.login1"
 LOGIND_IFACE = f"{LOGIND_NAME}.Manager"
 LOGIND_PATH = "/org/freedesktop/login1"
 
+WAKEUP_DELAY = 1 * 1000
+
 
 class Restorer:
     def __init__(self, service, i, r, an, cb=None):
@@ -64,13 +66,16 @@ class Restorer:
         else:
             self.service.restore_brightness()
 
+    def wakeup_callback(self):
+        self.handle_brightness()
+        if self.source:
+            GLib.source_remove(self.source)
+            self.schedule()
+
     def on_logind_signal(self, conn, sender, signal, args):
         if signal != "PrepareForSleep":
             return
         logging.debug(f"logind signal received: PrepareForSleep ({args.unpack()[0]})")
         if self.callback:
             self.callback()
-        self.handle_brightness()
-        if self.source:
-            GLib.source_remove(self.source)
-            self.schedule()
+        GLib.timeout_add(WAKEUP_DELAY, self.wakeup_callback)
