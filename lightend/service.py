@@ -127,7 +127,7 @@ class Service:
             int(params["restore_interval"]) * 1000,
             int(params["restore_range"]),
             self.normalize_mode or str2bool(params["auto_normalize"]),
-            self.sensor.connect,
+            self.on_wakeup,
         )
 
         self.owner_id = Gio.bus_own_name(
@@ -142,6 +142,9 @@ class Service:
     def __del__(self):
         if self.owner_id:
             Gio.bus_unown_name(self.owner_id)
+
+    def on_wakeup(self):
+        self.change_countdown = 0
 
     def detect_change(self, data):
         return abs(data - self.data) >= self.change_threshold
@@ -169,18 +172,17 @@ class Service:
         signal.signal(signal.SIGINT, lambda _, __: loop.quit())
 
         def sensor_run():
-            change_countdown = 0
             while running:
                 time.sleep(self.sensor_interval)
-                if change_countdown > 0:
-                    change_countdown -= 1
+                if self.change_countdown > 0:
+                    self.change_countdown -= 1
                     continue
                 data, ok = self.sensor.get_data()
                 if not ok:
                     logging.warning("HID device: invalid sensor data")
                     continue
                 if self.handle_sensor_data(data):
-                    change_countdown = self.change_rate
+                    self.change_countdown = self.change_rate
 
         threads = (Thread(target=loop.run), Thread(target=sensor_run))
 
