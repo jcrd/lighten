@@ -241,7 +241,9 @@ class Service:
 
     def set_brightness(self, v):
         if self.normalize_mode:
-            self.baseline += v - self.brightness
+            b = self.baseline + v - self.brightness
+            if b >= 0:
+                self.baseline = b
         r, v = self.ddcutil.set(v)
         if r:
             self.brightness = v
