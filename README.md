@@ -7,12 +7,11 @@ lighten is an intelligent monitor brightness control utility that regulates
 brightness based on ambient light.
 
 It requires a HID-based light sensor that reports ambient light values.
-It's designed to work with [arduino-lighten][arduino-lighten] [v0.1.0][arduino-version].
+It's designed to work with [arduino-lighten][arduino-lighten].
 
 See [this blog post][blog-post] for the complete setup!
 
 [arduino-lighten]: https://github.com/jcrd/arduino-lighten
-[arduino-version]: https://github.com/jcrd/arduino-lighten/releases/tag/v0.1.0
 [blog-post]: https://twiddlingbits.net/arduino-monitor-controller
 
 ## Packages
@@ -40,6 +39,7 @@ See [this blog post][blog-post] for the complete setup!
 ## Initial setup
 
 lighten uses [ddcutil][ddcutil] to control monitor brightness.
+
 This tool requires read/write access to `/dev/i2c` video card devices. In order to use it without root permissions:
 
 1. Add user to `i2c` group:
@@ -63,8 +63,11 @@ This tool requires read/write access to `/dev/i2c` video card devices. In order 
 
 See [this document][i2cperm] for more information.
 
+arduino-lighten requires its own setup as described in its [README][arduino-readme].
+
 [ddcutil]: https://www.ddcutil.com/
 [i2cperm]: https://www.ddcutil.com/i2c_permissions/
+[arduino-readme]: https://github.com/jcrd/arduino-lighten#setup
 
 ## Configuration
 
