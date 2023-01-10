@@ -6,7 +6,6 @@ import hid
 
 class Sensor:
     def __init__(self, vid, pid, size=16):
-        super().__init__()
         self.vid = vid
         self.pid = pid
         self.size = size
@@ -15,7 +14,6 @@ class Sensor:
         self.connect()
 
     def __del__(self):
-        super().__del__()
         if self.device:
             self.device.close()
 
