@@ -12,7 +12,7 @@ It's designed to work with [arduino-lighten][arduino-lighten].
 See [this blog post][blog-post] for the complete setup!
 
 [arduino-lighten]: https://github.com/jcrd/arduino-lighten
-[blog-post]: https://twiddlingbits.net/arduino-monitor-controller
+[blog-post]: https://twiddlingbits.net/lighten
 
 ## Packages
 
