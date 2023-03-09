@@ -16,54 +16,47 @@ def get_proxy(iface):
     )
 
 
+def call(method, arg=None, iface="Backlight", multi=False):
+    try:
+        p = get_proxy(iface)
+        r = p.call_sync(
+            method, arg, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
+        if multi:
+            return r.unpack()
+        else:
+            return r.unpack()[0]
+    except GLib.GError as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
+
+
 def set_brightness(v):
-    p = get_proxy("Backlight")
-    v = GLib.Variant("(u)", (v,))
-    r = p.call_sync("SetBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
-    return r.unpack()[0]
+    return call("SetBrightness", GLib.Variant("(u)", (v,)))
 
 
 def add_brightness(v):
-    p = get_proxy("Backlight")
-    v = GLib.Variant("(i)", (v,))
-    r = p.call_sync("AddBrightness", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
-    return r.unpack()[0]
+    return call("AddBrightness", GLib.Variant("(i)", (v,)))
 
 
 def restore_brightness():
-    p = get_proxy("Backlight")
-    r = p.call_sync(
-        "RestoreBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
-    )
-    return r.unpack()[0]
+    return call("RestoreBrightness")
 
 
 def normalize_brightness():
-    p = get_proxy("Backlight")
-    r = p.call_sync(
-        "NormalizeBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None
-    )
-    return r.unpack()[0]
+    return call("NormalizeBrightness")
 
 
 def set_auto(v):
-    p = get_proxy("Backlight")
-    v = GLib.Variant("(s)", (v,))
-    r = p.call_sync("SetAuto", v, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
-    return r.unpack()[0]
+    return call("SetAuto", GLib.Variant("(s)", (v,)))
 
 
 def get_brightness():
-    p = get_proxy("Backlight")
-    r = p.call_sync("GetBrightness", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
-    vs = r.unpack()
+    vs = call("GetBrightness", multi=True)
     return vs[0], vs[1]
 
 
 def get_data():
-    p = get_proxy("Sensor")
-    r = p.call_sync("GetData", None, Gio.DBusCallFlags.NO_AUTO_START, 3000, None)
-    return r.unpack()[0]
+    return call("GetData", iface="Sensor")
 
 
 def main():
